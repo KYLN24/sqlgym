@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sqlgym"
+authors = [
+    {name = "KYLN24", email = "1296845690@qq.com"},
+]
+description = "SQLGym: A portable Gymnasium environment of SQLite database."
+readme = "README.md"
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+
+dependencies = [
+    "gymnasium", "tqdm"
+]
+dynamic = ["version"]
+
+[project.urls]
+Repository = "https://github.com/KYLN24/sqlgym.git"
+
+[tool.setuptools]
+packages = ["sqlgym"]
+
+[tool.setuptools.dynamic]
+version = {attr = "sqlgym.__version__"}
