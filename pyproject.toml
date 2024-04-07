@@ -17,6 +17,9 @@ dependencies = [
 ]
 dynamic = ["version"]
 
+[project.optional-dependencies]
+data = ["openai"]
+
 [project.urls]
 Repository = "https://github.com/KYLN24/sqlgym.git"
 

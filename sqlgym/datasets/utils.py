@@ -38,10 +38,11 @@ class DbDataset:
 
 def make_sft_dataset(dataset: DbDataset, save_path: Path):
     with open(save_path, "w", encoding="utf8") as f:
-        for data in tqdm(dataset):
+        for idx, data in tqdm(enumerate(dataset), total=len(dataset)):
             f.write(
                 json.dumps(
                     {
+                        "id": idx,
                         "input": data.query,
                         "output": data.gt,
                     }
