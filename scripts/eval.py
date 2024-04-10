@@ -1,10 +1,11 @@
 import json
 import math
+import os
 from dataclasses import dataclass
 from typing import Sequence
 
 import torch
-from tqdm import trange
+from tqdm import tqdm, trange
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
@@ -15,6 +16,10 @@ from transformers import (
 
 from sqlgym import SqlGymEnv
 from sqlgym.datasets import BirdDataset
+
+RANK = int(os.getenv("RANK", "0"))
+LOCAL_RANK = int(os.getenv("LOCAL_RANK", "0"))
+WORLD_SIZE = int(os.getenv("WORLD_SIZE", "1"))
 
 
 @dataclass
@@ -68,7 +73,7 @@ class Evaluator:
         )
         input_ids = self.tokenizer(
             prompt, return_tensors="pt", add_special_tokens=False
-        ).input_ids.to("cuda")
+        ).input_ids.to(f"cuda:{LOCAL_RANK}")
         output_ids = self.model.generate(input_ids)
         generated_text = self.tokenizer.decode(
             output_ids[0][len(input_ids[0]) :], skip_special_tokens=True
@@ -106,7 +111,7 @@ class Evaluator:
         ]
         prompts_batch = self.tokenizer(
             prompts_batch, return_tensors="pt", padding=True, add_special_tokens=False
-        ).to("cuda")
+        ).to(f"cuda:{LOCAL_RANK}")
 
         output_ids = self.model.generate(**prompts_batch)
         generated_texts = self.tokenizer.batch_decode(
@@ -115,13 +120,14 @@ class Evaluator:
 
         return [self.parse_action(generated_text) for generated_text in generated_texts]
 
-    def eval(self, batch_size):
+    def eval(self, batch_size: int = 1, ids: Sequence[int] | None = None):
         rewards = []
         results = []
+        _iter = list[range(len(self.env.dataset))] if ids is None else ids
 
         if batch_size == 1:
-            for idx in trange(len(self.env.dataset)):
-                query = self.env.reset(idx)
+            for _idx in tqdm(_iter):
+                query = self.env.reset(_iter[_idx])
                 output = self.eval_one(query)
                 action = output["action"]
                 thought = output["thought"]
@@ -138,14 +144,13 @@ class Evaluator:
                     }
                 )
         else:
-            for idx in trange(math.ceil(len(self.env.dataset) / batch_size)):
-                queries = [
-                    self.env.reset(i)
-                    for i in range(idx * batch_size, (idx + 1) * batch_size)
-                ]
+            for _idx in trange(math.ceil(len(_iter) / batch_size)):
+                _start = _idx * batch_size
+                _end = min((_idx + 1) * batch_size, len(_iter))
+                queries = [self.env.reset(_iter[i]) for i in range(_start, _end)]
                 outputs = self.eval_one_batch(queries)
                 for i, output in enumerate(outputs):
-                    _ = self.env.reset(i + idx * batch_size)
+                    _ = self.env.reset(_iter[i + _idx * batch_size])
                     action = output["action"]
                     thought = output["thought"]
                     execution_result, reward, _, info, _ = self.env.step(action)
@@ -160,8 +165,6 @@ class Evaluator:
                             "thought": thought,
                         }
                     )
-
-        print(f"Average reward: {sum(rewards) / len(rewards)}")
         return results
 
 
@@ -172,20 +175,43 @@ def main(args: Arguments):
         args.model,
         attn_implementation="flash_attention_2",
         torch_dtype=torch.bfloat16,
-    ).cuda()
+    ).to(f"cuda:{LOCAL_RANK}")
 
     dataset = BirdDataset(
         bird_path=args.bird_path,
         mode="dev",
     )
+
     env = SqlGymEnv(dataset)
     evaluator = Evaluator(model, tokenizer, env, args.react)
-    results = evaluator.eval(batch_size=args.batch_size)
-    if args.save_path is not None:
-        with open(args.save_path, "w", encoding="utf8") as f:
-            f.writelines([json.dumps(r) for r in results])
+    if WORLD_SIZE > 1:
+        # _ids = list(range(len(dataset)))
+        _ids = list(range(137))
+        _per_device_len = math.ceil(len(_ids) / WORLD_SIZE)
+        ids = _ids[RANK * _per_device_len : (RANK + 1) * _per_device_len]
+        torch.distributed.barrier()
+    else:
+        ids = None
+
+    results = evaluator.eval(batch_size=args.batch_size, ids=ids)
+
+    if WORLD_SIZE > 1:
+        torch.distributed.barrier()
+        _results = [None for _ in range(WORLD_SIZE)]
+        torch.distributed.gather_object(results, _results if RANK == 0 else None, dst=0)
+        results = sum(_results, [])
+
+    if RANK == 0:
+        if args.save_path is not None:
+            with open(args.save_path, "w", encoding="utf8") as f:
+                for r in results:
+                    f.write(json.dumps(r) + "\n")
+        rewards = [r["reward"] for r in results]
+        print(f"Mean reward: {sum(rewards) / len(rewards)}")
 
 
 if __name__ == "__main__":
     parser = HfArgumentParser(Arguments)
+    if WORLD_SIZE > 1:
+        torch.distributed.init_process_group(backend="nccl")
     main(parser.parse_args())
