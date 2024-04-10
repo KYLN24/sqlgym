@@ -127,7 +127,9 @@ def main(args: Arguments):
     if args.chat_template is not None:
         tokenizer.chat_template = args.chat_template
 
-    dataset = make_dataset(args.train_set, tokenizer, args.seed, args.num_samples)
+    dataset = make_dataset(
+        args.train_set, tokenizer, args.seed, args.num_samples, args.react
+    )
 
     model = AutoModelForCausalLM.from_pretrained(
         args.model,

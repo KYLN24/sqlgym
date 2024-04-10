@@ -133,12 +133,7 @@ class Evaluator:
         _iter = list[range(len(self.env.dataset))] if ids is None else ids
 
         if batch_size == 1:
-            for _idx in tqdm(
-                _iter,
-                desc=f"Evaluating {RANK}",
-                position=RANK,
-                leave=False,
-            ):
+            for _idx in tqdm(_iter, desc="Evaluating"):
                 query = self.env.reset(_iter[_idx])
                 output = self.eval_one(query)
                 action = output["action"]
@@ -156,12 +151,7 @@ class Evaluator:
                     }
                 )
         else:
-            for _idx in trange(
-                math.ceil(len(_iter) / batch_size),
-                desc=f"Evaluating {RANK}",
-                position=RANK,
-                leave=False,
-            ):
+            for _idx in trange(math.ceil(len(_iter) / batch_size), desc="Evaluating"):
                 _start = _idx * batch_size
                 _end = min((_idx + 1) * batch_size, len(_iter))
                 queries = [self.env.reset(_iter[i]) for i in range(_start, _end)]
