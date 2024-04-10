@@ -65,7 +65,7 @@ class Evaluator:
                     "role": "user",
                     "content": "Given you a description of a SQlite database system, I will ask you a question, then you should help me operate the SQLite database with SQL to answer the question.\n\nYou have to explain the problem and your solution to me and write down your thoughts.\nAfter thinking and explaining thoroughly, every round you can choose to operate or to answer.\n\nyour response should be like this:\nThought: I think...\n\nAction: ```sql\nSELECT * FROM table WHERE condition;\n```\n\nYou MUST put SQL in markdown format without any other comments. Your SQL should be in one line. Every time you can only execute one SQL statement.",
                 },
-                {"role": "assistent", "content": "Ok."},
+                {"role": "assistant", "content": "Ok."},
                 {"role": "user", "content": query},
             ]
         else:
@@ -98,7 +98,7 @@ class Evaluator:
                         "role": "user",
                         "content": "Given you a description of a SQlite database system, I will ask you a question, then you should help me operate the SQLite database with SQL to answer the question.\n\nYou have to explain the problem and your solution to me and write down your thoughts.\nAfter thinking and explaining thoroughly, every round you can choose to operate or to answer.\n\nyour response should be like this:\nThought: I think...\n\nAction: ```sql\nSELECT * FROM table WHERE condition;\n```\n\nYou MUST put SQL in markdown format without any other comments. Your SQL should be in one line. Every time you can only execute one SQL statement.",
                     },
-                    {"role": "assistent", "content": "Ok."},
+                    {"role": "assistant", "content": "Ok."},
                     {"role": "user", "content": query},
                 ]
                 for query in queries
@@ -147,7 +147,7 @@ class Evaluator:
                         "execution_result": execution_result,
                         "info": info,
                         "thought": output["thought"],
-                        "generated_text": output["generated_text"],
+                        # "generated_text": output["generated_text"],
                     }
                 )
         else:
@@ -169,7 +169,7 @@ class Evaluator:
                             "execution_result": execution_result,
                             "info": info,
                             "thought": output["thought"],
-                            "generated_text": output["generated_text"],
+                            # "generated_text": output["generated_text"],
                         }
                     )
         if WORLD_SIZE > 1:
@@ -198,7 +198,8 @@ def main(args: Arguments):
     env = SqlGymEnv(dataset)
     evaluator = Evaluator(model, tokenizer, env, args.react)
     if WORLD_SIZE > 1:
-        _ids = list(range(len(dataset)))
+        # _ids = list(range(len(dataset)))
+        _ids = list(range(8))
         _per_device_len = math.ceil(len(_ids) / WORLD_SIZE)
         ids = _ids[RANK * _per_device_len : (RANK + 1) * _per_device_len]
     else:

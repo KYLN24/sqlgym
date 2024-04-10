@@ -19,7 +19,7 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 react = ["openai"]
-sft = ["sqlgym[react]", "torch", "transformers", "deepspeed", "datasets"]
+sft = ["sqlgym[react]", "torch", "transformers", "deepspeed", "datasets", "accelerate"]
 
 [project.urls]
 Repository = "https://github.com/KYLN24/sqlgym.git"

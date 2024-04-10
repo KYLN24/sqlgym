@@ -27,8 +27,6 @@ class Arguments:
     max_grad_norm: float = 1.0
     num_train_epochs: int = 1
     warmup_ratio: float = 0.1
-    logging_steps: int = 500
-    save_steps: int = 500
     seed: int = 42
     gradient_checkpointing: bool = False
     zero_stage: int = 0
@@ -151,8 +149,8 @@ def main(args: Arguments):
             lr_scheduler_type="cosine",
             warmup_ratio=args.warmup_ratio,
             logging_first_step=True,
-            logging_steps=args.logging_steps,
-            save_steps=args.save_steps,
+            logging_steps=1,
+            save_strategy="epoch",
             seed=args.seed,
             bf16=args.bf16,
             tf32=args.tf32,
@@ -176,6 +174,9 @@ def main(args: Arguments):
         train_dataset=dataset,
         tokenizer=tokenizer,
     ).train()
+
+    tokenizer.save_pretrained(f"{args.output_dir}/model")
+    model.save_pretrained(f"{args.output_dir}/model")
 
 
 if __name__ == "__main__":
