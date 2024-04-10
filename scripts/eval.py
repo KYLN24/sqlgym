@@ -144,7 +144,7 @@ class Evaluator:
                     for i in range(idx * batch_size, (idx + 1) * batch_size)
                 ]
                 outputs = self.eval_one_batch(queries)
-                for i, action in enumerate(outputs):
+                for i, output in enumerate(outputs):
                     _ = self.env.reset(i + idx * batch_size)
                     action = output["action"]
                     thought = output["thought"]
