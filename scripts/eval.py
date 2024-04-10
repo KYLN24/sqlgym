@@ -165,17 +165,23 @@ class Evaluator:
                             "thought": thought,
                         }
                     )
+        if WORLD_SIZE > 1:
+            torch.distributed.barrier()
         return results
 
 
 def main(args: Arguments):
     tokenizer = AutoTokenizer.from_pretrained(args.model)
 
-    model = AutoModelForCausalLM.from_pretrained(
-        args.model,
-        attn_implementation="flash_attention_2",
-        torch_dtype=torch.bfloat16,
-    ).to(f"cuda:{LOCAL_RANK}")
+    model = (
+        AutoModelForCausalLM.from_pretrained(
+            args.model,
+            attn_implementation="flash_attention_2",
+            torch_dtype=torch.bfloat16,
+        )
+        .eval()
+        .to(f"cuda:{LOCAL_RANK}")
+    )
 
     dataset = BirdDataset(
         bird_path=args.bird_path,
@@ -185,21 +191,19 @@ def main(args: Arguments):
     env = SqlGymEnv(dataset)
     evaluator = Evaluator(model, tokenizer, env, args.react)
     if WORLD_SIZE > 1:
-        # _ids = list(range(len(dataset)))
-        _ids = list(range(137))
+        _ids = list(range(len(dataset)))
         _per_device_len = math.ceil(len(_ids) / WORLD_SIZE)
         ids = _ids[RANK * _per_device_len : (RANK + 1) * _per_device_len]
-        torch.distributed.barrier()
     else:
         ids = None
 
     results = evaluator.eval(batch_size=args.batch_size, ids=ids)
 
     if WORLD_SIZE > 1:
-        torch.distributed.barrier()
         _results = [None for _ in range(WORLD_SIZE)]
         torch.distributed.gather_object(results, _results if RANK == 0 else None, dst=0)
-        results = sum(_results, [])
+        if RANK == 0:
+            results = sum(_results, [])
 
     if RANK == 0:
         if args.save_path is not None:
@@ -214,4 +218,5 @@ if __name__ == "__main__":
     parser = HfArgumentParser(Arguments)
     if WORLD_SIZE > 1:
         torch.distributed.init_process_group(backend="nccl")
+    torch.cuda.set_device(LOCAL_RANK)
     main(parser.parse_args())
