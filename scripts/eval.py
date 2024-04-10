@@ -200,8 +200,7 @@ def main(args: Arguments):
     env = SqlGymEnv(dataset)
     evaluator = Evaluator(model, tokenizer, env, args.react)
     if WORLD_SIZE > 1:
-        # _ids = list(range(len(dataset)))
-        _ids = list(range(8))
+        _ids = list(range(len(dataset)))
         _per_device_len = math.ceil(len(_ids) / WORLD_SIZE)
         ids = _ids[RANK * _per_device_len : (RANK + 1) * _per_device_len]
     else:
