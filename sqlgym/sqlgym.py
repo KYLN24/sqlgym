@@ -52,9 +52,11 @@ class SqlGymEnv(Env):
         """
         execution_result = self._exec_sql(action)
         reward = self._get_reward(execution_result)
+        if isinstance(execution_result, Exception):
+            execution_result = str(execution_result)
         if self.dataset.sql_gym_env_mode == SqlGymEnvModeEnum.SINGLE:
             terminated = True
-            info = {"ground_truth": self._get_ground_truth()}
+            info = {"ground_truth": self.dataset[self.idx].gt}
         else:
             raise NotImplementedError
         return execution_result, reward, terminated, info, terminated
