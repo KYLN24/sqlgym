@@ -50,11 +50,12 @@ class Evaluator:
     def parse_action(self, generated_text: str):
         return {
             "thought": (
-                generated_text.split("Thought:")[1].split("Action:")[0].strip()
+                generated_text.split("Thought:")[-1].split("Action:")[0].strip()
                 if self.react
                 else None
             ),
             "action": generated_text.split("```sql")[-1].split("```")[0].strip(),
+            "generated_text": generated_text,
         }
 
     def eval_one(self, query: str):
@@ -141,7 +142,6 @@ class Evaluator:
                 query = self.env.reset(_iter[_idx])
                 output = self.eval_one(query)
                 action = output["action"]
-                thought = output["thought"]
                 execution_result, reward, _, info, _ = self.env.step(action)
                 rewards.append(reward)
                 results.append(
@@ -151,7 +151,8 @@ class Evaluator:
                         "reward": reward,
                         "execution_result": execution_result,
                         "info": info,
-                        "thought": thought,
+                        "thought": output["thought"],
+                        "generated_text": output["generated_text"],
                     }
                 )
         else:
@@ -168,7 +169,6 @@ class Evaluator:
                 for i, output in enumerate(outputs):
                     _ = self.env.reset(_iter[i + _idx * batch_size])
                     action = output["action"]
-                    thought = output["thought"]
                     execution_result, reward, _, info, _ = self.env.step(action)
                     rewards.append(reward)
                     results.append(
@@ -178,7 +178,8 @@ class Evaluator:
                             "reward": reward,
                             "execution_result": execution_result,
                             "info": info,
-                            "thought": thought,
+                            "thought": output["thought"],
+                            "generated_text": output["generated_text"],
                         }
                     )
         if WORLD_SIZE > 1:
