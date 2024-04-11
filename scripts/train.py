@@ -135,7 +135,7 @@ def main(args: Arguments):
         torch_dtype=torch.bfloat16 if args.bf16 else torch.float16,
     )
 
-    Trainer(
+    trainer = Trainer(
         model=model,
         args=TrainingArguments(
             output_dir=args.output_dir,
@@ -173,10 +173,9 @@ def main(args: Arguments):
         data_collator=get_collate(tokenizer),
         train_dataset=dataset,
         tokenizer=tokenizer,
-    ).train()
-
-    tokenizer.save_pretrained(f"{args.output_dir}/model")
-    model.save_pretrained(f"{args.output_dir}/model")
+    )
+    trainer.train()
+    trainer.save_model(f"{args.output_dir}/model")
 
 
 if __name__ == "__main__":
