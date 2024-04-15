@@ -69,7 +69,7 @@ class Evaluator:
             messages = [
                 {
                     "role": "user",
-                    "content": "Given you a description of a SQlite database system, I will ask you a question, then you should help me operate the SQLite database with SQL to answer the question.\n\nYou have to explain the problem and your solution to me and write down your thoughts.\nAfter thinking and explaining thoroughly, every round you can choose to operate or to answer.\n\nyour response should be like this:\nThought: I think...\n\nAction: ```sql\nSELECT * FROM table WHERE condition;\n```\n\nYou MUST put SQL in markdown format without any other comments. Your SQL should be in one line. Every time you can only execute one SQL statement.",
+                    "content": "Given you a description of a SQlite database system, I will ask you a question, then you should help me operate the SQLite database with SQL to answer the question.\n\nYou have to explain the problem and your solution to me and write down your thoughts.\nAfter thinking and explaining thoroughly, you should give a SQL statement to solve the question.\n\nyour response should be like this:\nThought: Your thought here.\n\nAction: ```sql\nSELECT * FROM table WHERE condition;\n```\n\nYou MUST put SQL in markdown format without any other comments. Your SQL should be in one line. Every time you can only execute one SQL statement.",
                 },
                 {"role": "assistant", "content": "Ok."},
                 {"role": "user", "content": query},
@@ -97,7 +97,7 @@ class Evaluator:
                 [
                     {
                         "role": "user",
-                        "content": "Given you a description of a SQlite database system, I will ask you a question, then you should help me operate the SQLite database with SQL to answer the question.\n\nYou have to explain the problem and your solution to me and write down your thoughts.\nAfter thinking and explaining thoroughly, every round you can choose to operate or to answer.\n\nyour response should be like this:\nThought: I think...\n\nAction: ```sql\nSELECT * FROM table WHERE condition;\n```\n\nYou MUST put SQL in markdown format without any other comments. Your SQL should be in one line. Every time you can only execute one SQL statement.",
+                        "content": "Given you a description of a SQlite database system, I will ask you a question, then you should help me operate the SQLite database with SQL to answer the question.\n\nYou have to explain the problem and your solution to me and write down your thoughts.\nAfter thinking and explaining thoroughly, you should give a SQL statement to solve the question.\n\nyour response should be like this:\nThought: Your thought here.\n\nAction: ```sql\nSELECT * FROM table WHERE condition;\n```\n\nYou MUST put SQL in markdown format without any other comments. Your SQL should be in one line. Every time you can only execute one SQL statement.",
                     },
                     {"role": "assistant", "content": "Ok."},
                     {"role": "user", "content": query},
@@ -227,6 +227,6 @@ def main(args: Arguments):
 if __name__ == "__main__":
     parser = HfArgumentParser(Arguments)
     if WORLD_SIZE > 1:
-        torch.distributed.init_process_group(backend="nccl")
+        torch.distributed.init_process_group(backend="gloo")
     torch.cuda.set_device(LOCAL_RANK)
     main(parser.parse_args())
