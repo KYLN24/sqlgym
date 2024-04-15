@@ -142,6 +142,7 @@ class Evaluator:
                 rewards.append(reward)
                 results.append(
                     {
+                        "id": _iter[_idx],
                         "query": query,
                         "action": action,
                         "reward": reward,
@@ -164,6 +165,7 @@ class Evaluator:
                     rewards.append(reward)
                     results.append(
                         {
+                            "id": _iter[i + _idx * batch_size],
                             "query": queries[i],
                             "action": action,
                             "reward": reward,
