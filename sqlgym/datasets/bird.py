@@ -109,12 +109,14 @@ class BirdDataset(DbDataset):
 
     def __getitem__(self, idx: int) -> DbDatasetItem:
         return DbDatasetItem(
-            path=self.bird_path.joinpath(
+            path="file:"
+            + self.bird_path.joinpath(
                 self.mode,
                 f"{self.mode}_databases",
                 self._data[idx]["db_id"],
                 f'{self._data[idx]["db_id"]}.sqlite',
-            ),
+            ).as_posix()
+            + "?mode=ro",
             gt=self._data[idx]["SQL"],
             query=self._format_instruction(idx),
             info={

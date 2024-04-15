@@ -19,7 +19,8 @@ class SqlGymEnv(Env):
     ) -> str:
         super().reset(seed=seed, options=options)
         self.idx = idx
-        self.conn = sqlite3.connect(self.dataset[idx].path)
+        path = self.dataset[idx].path
+        self.conn = sqlite3.connect(path, uri=path.startswith("file:"))
         return self.dataset[idx].query
 
     def _get_ground_truth(self) -> str:

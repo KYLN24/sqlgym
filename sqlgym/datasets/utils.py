@@ -31,10 +31,6 @@ class DbDataset:
     def __len__(self) -> int:
         raise NotImplementedError
 
-    @abstractmethod
-    def format_instruction(self, idx: int) -> str:
-        raise NotImplementedError
-
 
 def make_sft_dataset(dataset: DbDataset, save_path: Path):
     with open(save_path, "w", encoding="utf8") as f:
