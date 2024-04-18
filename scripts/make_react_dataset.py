@@ -8,12 +8,12 @@ from openai import AsyncOpenAI
 from tqdm import tqdm
 
 NUM_SAMPLES = (
-    1000  # The number of samples to generate. If None, all samples will be generated.
+    3000  # The number of samples to generate. If None, all samples will be generated.
 )
 
 SEED = 3407
 
-MAX_CONCURRENCY = 32  # The number of concurrent requests to OpenAI API.
+MAX_CONCURRENCY = 4  # The number of concurrent requests to OpenAI API.
 MODEL = "gpt-3.5-turbo"  # GPT 3.5 Turbo is enough for this task. But you can try GPT 4 Turbo if you want.
 # MODEL = "gpt-4-turbo-preview"
 API_KEYS = itertools.cycle(
@@ -42,7 +42,7 @@ prompt_tokens = 0
 completion_tokens = 0
 
 
-async def complete(prompt, ttl=5):
+async def complete(prompt, ttl=10):
     client = AsyncOpenAI(api_key=next(API_KEYS))
     if ttl == 0:
         return ""
@@ -66,6 +66,7 @@ async def complete(prompt, ttl=5):
         return completion.choices[0].message.content
     except Exception as e:  # pylint: disable=W0718:broad-exception-caught
         print(e)
+        await asyncio.sleep(2)
         return await complete(prompt, ttl - 1)
 
 
@@ -104,7 +105,7 @@ def format_data_item(d):
         "conversation": [
             {
                 "from": "human",
-                "value": "Given you a description of a SQlite database system, I will ask you a question, then you should help me operate the SQLite database with SQL to answer the question.\n\nYou have to explain the problem and your solution to me and write down your thoughts.\nAfter thinking and explaining thoroughly, every round you can choose to operate or to answer.\n\nyour response should be like this:\nThought: I think...\n\nAction: ```sql\nSELECT * FROM table WHERE condition;\n```\n\nYou MUST put SQL in markdown format without any other comments. Your SQL should be in one line. Every time you can only execute one SQL statement.",
+                "value": "Given you a description of a SQlite database system, I will ask you a question, then you should help me operate the SQLite database with SQL to answer the question.\n\nYou have to explain the problem and your solution to me and write down your thoughts.\nAfter thinking and explaining thoroughly, you should give a SQL statement to solve the question.\n\nyour response should be like this:\nThought: Your thought here.\n\nAction: ```sql\nSELECT * FROM table WHERE condition;\n```\n\nYou MUST put SQL in markdown format without any other comments. Your SQL should be in one line. Every time you can only execute one SQL statement.",
                 "loss": None,
             },
             {"from": "gpt", "value": "Ok.", "loss": False},

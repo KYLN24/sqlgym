@@ -25,9 +25,12 @@ class SqlGymEnv(Env):
 
     def _get_ground_truth(self) -> str:
         cursor = self.conn.cursor()
-        cursor.execute(self.dataset[self.idx].gt)
-        gt = cursor.fetchall()
-        return gt
+        try:
+            cursor.execute(self.dataset[self.idx].gt)
+            gt = cursor.fetchall()
+            return gt
+        except Exception as e:
+            return str(e)
 
     def _get_reward(self, execution_result: list | Exception) -> float:
         if isinstance(execution_result, Exception):
