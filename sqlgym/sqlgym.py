@@ -10,6 +10,7 @@ class SqlGymEnv(Env):
         self.idx = None
         self.dataset = dataset
         self.conn = None
+        self.observation = "Call reset() to initialize the environment."
 
     def reset(  # pylint: disable=arguments-differ
         self,
@@ -21,7 +22,8 @@ class SqlGymEnv(Env):
         self.idx = idx
         path = self.dataset[idx].path
         self.conn = sqlite3.connect(path, uri=path.startswith("file:"))
-        return self.dataset[idx].query
+        self.observation = self.dataset[idx].query
+        return self.observation
 
     def _get_ground_truth(self) -> str:
         cursor = self.conn.cursor()

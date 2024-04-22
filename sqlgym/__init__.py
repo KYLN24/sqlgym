@@ -2,7 +2,7 @@ from gymnasium.envs.registration import register
 
 from .sqlgym import SqlGymEnv
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 
 register(
